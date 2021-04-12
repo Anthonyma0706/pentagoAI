@@ -58,13 +58,13 @@ public class MyTools {
         if(agentIsBlack){
             // if our agent is black
             int score = (int) (blackScore/whiteScore);
-            System.out.println("Our agent is black, the relative score is: "+score);
+            //System.out.println("Our agent is black, the relative score is: "+score);
             return score;
         }
         else{
             // if our agent is white
             int score = (int) (whiteScore / blackScore);
-            System.out.println("Our agent is white, the relative score is: "+score);
+            //System.out.println("Our agent is white, the relative score is: "+score);
             return score;
         }
 
@@ -418,7 +418,9 @@ public class MyTools {
 
 
         // Iterate for all possible moves
+        //int countMove = 0;
         for(PentagoMove move : allPossibleMoves) {
+
             PentagoBoardState newPbs = (PentagoBoardState) boardState.clone(); // clone the PBS
             newPbs.processMove(move);
             // first check if we can win immediately!
@@ -444,7 +446,7 @@ public class MyTools {
 
                 // see what move will lower the opponent's score?
                 for(PentagoMove breakMove : allPossibleMoves) {
-                    System.out.println("evaluating opponent's ... try to break it");
+                    //System.out.println("evaluating opponent's ... try to break it");
 
                     PentagoBoardState updatedPbs = (PentagoBoardState) boardState.clone(); // clone the PBS
                     updatedPbs.processMove(breakMove);
@@ -454,13 +456,13 @@ public class MyTools {
 
 
                     int newOpposcore = getScore(updatedPbs,!forBlack,!blackTurn);
-                    System.out.println("NEW opponent score is: " + newOpposcore);
+                    //System.out.println("NEW opponent score is: " + newOpposcore);
                     if(newOpposcore < 1000000){
-                        System.out.println("We successfully break opponent's win! The new score is: "+ newOpposcore);
+                        //System.out.println("We successfully break opponent's win! The new score is: "+ newOpposcore);
                         if(newOpposcore < lowestScoreSoFar){
                             bestBreakMove = breakMove;
                             lowestScoreSoFar = newOpposcore;
-                            System.out.println("The lowest score now is: "+ lowestScoreSoFar);
+                            //System.out.println("The lowest score now is: "+ lowestScoreSoFar);
                         }
                         count++;
                         if(count >= 50){
@@ -474,6 +476,7 @@ public class MyTools {
 
 
                 }
+
                 if(count >0) {
                     System.out.println("The chosen move has score : "+ lowestScoreSoFar);
                     return bestBreakMove;
@@ -483,6 +486,7 @@ public class MyTools {
 
                 return null;
             }
+
 
 
         }

@@ -205,7 +205,7 @@ public class StudentPlayer extends PentagoPlayer {
                 newPbs.processMove(move); // update the cloned PBS!
                 int score = miniMax(newPbs,false, depthLimit - 1, bestScore, beta, isTerminalState, numMovesToConsider, startTime,isBlackPlayer);
                 if(score > 1000) {
-                    System.out.println("bigScore at Max! we keep going! "+ score); // maybe we should dive in here more! give it more depth limit
+                   // System.out.println("bigScore at Max! we keep going! "+ score); // maybe we should dive in here more! give it more depth limit
                     /**
                      *
                      * we can do something useful here!
@@ -239,12 +239,13 @@ public class StudentPlayer extends PentagoPlayer {
                 if(alpha >= beta){ // in this case 3 > 2
                     //break;
                     //System.out.println("pruned!");
-                    System.out.println("alpha is returned");
-                    return alpha;
+                    //System.out.println("alpha is returned");
+                    System.out.println("alpha should be returned!");
+                    return bestScore;
 
                 }
             }
-            System.out.println("Max score at Max Node is returned Now: "+ bestScore);
+            //System.out.println("Max score at Max Node is returned Now: "+ bestScore);
             return bestScore;
             // 3 is returned in the END!!
         }
@@ -277,12 +278,12 @@ public class StudentPlayer extends PentagoPlayer {
 
                 if(alpha >= bestScore){ // in this case 3 > 2
                     //break;
-                    System.out.println("pruned!");
+                    //System.out.println("pruned!");
                     return alpha;
 
                 }
             }
-            System.out.println("low score at Min Node is returned Now: "+ bestScore);
+            //System.out.println("low score at Min Node is returned Now: "+ bestScore);
             return bestScore; // 3 is returned by the FIRST MinNode
 
 
@@ -300,6 +301,7 @@ public class StudentPlayer extends PentagoPlayer {
 
         try {
 
+            long startTime = System.nanoTime();
 
             int bestScore = Integer.MIN_VALUE;
             Move bestMove = boardState.getRandomMove();
@@ -349,15 +351,15 @@ public class StudentPlayer extends PentagoPlayer {
                 //System.out.println("Now process move "+count);
                 PentagoBoardState newPbs = (PentagoBoardState) boardState.clone();
                 newPbs.processMove(move);// when we take this move, what would happen? we will calculate this miniMax score!
-
+                long miniMaxStartTime = System.nanoTime();
                 int alpha = Integer.MIN_VALUE;
                 int beta = Integer.MAX_VALUE;
                 int depthAllocated = 3; // 3 is fine for play time
                 int numMovesConsider = 20;
                 //System.out.println("Now compute the minimax Score....");
 
-                long startTime = System.nanoTime();
-                int score = miniMax(newPbs, true, depthAllocated, alpha, beta, false, 20, startTime, weAreBlack);
+
+                int score = miniMax(newPbs, true, depthAllocated, alpha, beta, false, numMovesConsider, miniMaxStartTime, weAreBlack);
                 System.out.println("The chosen move in iteration: " + count + " has score: " + score);
                 if (score == -1000) {
                     System.out.println("use random move!!");
@@ -380,6 +382,9 @@ public class StudentPlayer extends PentagoPlayer {
 
 
             // Return your move to be processed by the server.
+            long endTime = System.nanoTime();
+            long timeSpent = (endTime - startTime) / 1000000;
+            System.out.println("The time for choosing move is: " + timeSpent);
             return bestMove;
 
         }
