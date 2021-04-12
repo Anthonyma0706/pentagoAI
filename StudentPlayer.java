@@ -32,24 +32,23 @@ public class StudentPlayer extends PentagoPlayer {
 
     // Also implement a utility func!!
 
-    public static int utility(PentagoBoardState boardState)
+    public static int utility(PentagoBoardState boardState, boolean isBlackPlayer)
     {
 
         //System.out.println("Now calculate the utility for this state!");
+        boolean blacksTurn = isBlackPlayer ?true : false;
+        int totalScore = MyTools.getScore(boardState,isBlackPlayer,blacksTurn);
+        //System.out.println("The score computed by getScore is: " + totalScore);
+
 
         PentagoBoardState.Piece playerPiece; // our agent! not the first player!
         // although our agent can be the first player as well!
-        if(boardState.firstPlayer() == 0){
 
+        if(isBlackPlayer){
             playerPiece = PentagoBoardState.Piece.BLACK;
-            //System.out.println("First player is white, the utility function should report w.r.t white piece");
-            /**
-             * we assume our agent is black now
-             */
         }
         else {
             playerPiece = PentagoBoardState.Piece.WHITE;
-            System.out.println("evaluating white, wrong!!");
 
         }
 
@@ -146,7 +145,19 @@ public class StudentPlayer extends PentagoPlayer {
      4. implement alpha-beta
 
      */
-    public static int miniMax(PentagoBoardState boardState, boolean isMaxPlayer, int depthLimit, int alpha, int beta, boolean isTerminalState, int numMovesToConsider){
+    public static int miniMax(PentagoBoardState boardState, boolean isMaxPlayer, int depthLimit, int alpha, int beta, boolean isTerminalState, int numMovesToConsider,
+                              long startTime, boolean isBlackPlayer){
+
+
+        int bestScore = 0;
+
+
+
+        long currTime = System.nanoTime();
+        if((currTime - startTime)/ 1000000 > 1500){
+            System.out.println("may exceed TIME!!");
+            return -1000;
+        }
 
         boolean terminalState = isTerminalState;
         // 1. update terminal state, see if the game or search is terminated
@@ -159,43 +170,41 @@ public class StudentPlayer extends PentagoPlayer {
         }
 
         // the possible nextMoves given the current state
-        //ArrayList<PentagoMove> possibleMoves = boardState.getAllLegalMoves();
+        // we process it, choose 30 random moves ONLY
         ArrayList<PentagoMove> childrenMoves = boardState.getAllLegalMoves();
         if(childrenMoves.size() <= 30){ // we can choose 30 or 20 here
             //System.out.println("Warning! Fewer than 30 next moves! used for debugging");
             terminalState = true;
             numMovesToConsider = Math.max(childrenMoves.size() -2, 0); // account for an edge case where it becomes negative!
         }
-        //System.out.println("there are " + childrenMoves.size() + "possible next moves for this state");
-        // randomly
 
-        //ArrayList<PentagoMove> possibleMoves = new ArrayList<>();
         LinkedList<PentagoMove> possibleLinkedMoves = new LinkedList<>();
-
 
         Collections.shuffle(childrenMoves);
         for(int i = 0;i<numMovesToConsider;i++){
             PentagoMove randMove = childrenMoves.get(i);
             possibleLinkedMoves.add(randMove);
-            //possibleMoves.add(randMove);
         }
 
 
         if(terminalState){ // reach the terminal
-            return utility(boardState); // evaluate the boardState!
+
+            return MyTools.evaluateBoard(boardState, true, isBlackPlayer);
+           // return utility(boardState, isBlackPlayer); // evaluate the boardState!
         }
 
         if(isMaxPlayer){
             // at max node, update alpha only
             // use lowScore to represent the updated alpha!
-            int maxScore = alpha; // -inf -> 4 ->
+            //int maxScore = alpha; // -inf -> 4 ->
+            bestScore = alpha;
             for (PentagoMove move: possibleLinkedMoves) {
                 // clone it
                 PentagoBoardState newPbs = (PentagoBoardState) boardState.clone();
                 //PentagoBoardState newPbs = new PentagoBoardState(boardState); // clone the PBS for safety!
                 newPbs.processMove(move); // update the cloned PBS!
-                int score = miniMax(newPbs,false, depthLimit - 1, maxScore, beta, isTerminalState, numMovesToConsider);
-                if(score >=25 && score <= 30) {
+                int score = miniMax(newPbs,false, depthLimit - 1, bestScore, beta, isTerminalState, numMovesToConsider, startTime,isBlackPlayer);
+                if(score > 1000) {
                     System.out.println("bigScore at Max! we keep going! "+ score); // maybe we should dive in here more! give it more depth limit
                     /**
                      *
@@ -211,107 +220,70 @@ public class StudentPlayer extends PentagoPlayer {
                      This will cause error since the score can only be greater and greater....
                      */
                     try{
-                        score = miniMax(newPbs,false, 1, maxScore, beta, false, 20);
+                        score = miniMax(newPbs,false, 1, bestScore, beta, false, 20, startTime, isBlackPlayer);
                     }
                     catch (IndexOutOfBoundsException e){
                         System.out.println("Index out of bound!" + e);
-                        return maxScore;
+                        return bestScore;
                     }
 
                     //score = miniMax(newPbs,false, 2, maxScore, beta, false, 50);
                 }
-                else if(score > 30){
+                else if(score > 40000){
                     System.out.println("This is a high score move!");
-                    return maxScore;
+                    return bestScore;
                 }
-                if(score == 0 || score == 1){
-                    // this means that we are at the beginning, no need to explore A LOT!
-                    return score;
-                    //break;
-                }
-                // 3 initially, returned by the FIRST Min Node
-                // Now explore the SECOND Min Node, with alpha = 3, beta = -inf
 
-
-                if(score > maxScore ) maxScore = score; // score better than the current is ACCEPTED!
-                // 3 > -inf, so maxScore (alpha) is now 3.
-                // 3 is returned after the Second Min Node is pruned..., maxScore is not updated
-                // we keep searching the THIRD MIN NODE...
+                if(score > bestScore) bestScore = score; // score better than the current is ACCEPTED!
 
                 if(alpha >= beta){ // in this case 3 > 2
                     //break;
                     //System.out.println("pruned!");
+                    System.out.println("alpha is returned");
                     return alpha;
 
                 }
             }
-            return maxScore;
+            System.out.println("Max score at Max Node is returned Now: "+ bestScore);
+            return bestScore;
             // 3 is returned in the END!!
         }
         else{// the Min player's turn
             // use lowScore to represent the updated beta!
-            int lowScore = beta; // +inf (MAX_VALUE;)
+            //int lowScore = beta; // +inf (MAX_VALUE;)
+            bestScore = beta;
             for (PentagoMove move: possibleLinkedMoves) {
                 // clone it
                 PentagoBoardState newPbs = (PentagoBoardState) boardState.clone(); // clone the PBS for safety!
                 newPbs.processMove(move); // update the cloned PBS!
-                int score = miniMax(newPbs,true, depthLimit - 1, alpha, lowScore, isTerminalState , numMovesToConsider); // 3
+                int score = miniMax(newPbs,true, depthLimit - 1, alpha, bestScore, isTerminalState , numMovesToConsider, startTime, isBlackPlayer); // 3
 
-                /*if(score >=15 && score <= 20) {
-                    System.out.println("bigScore at min! we keep going! "+ score); // maybe we should dive in here more! give it more depth limit
 
-                    try{
-                        score = miniMax(newPbs,true, 1, alpha, lowScore, false, 10);
-                    }
-                    catch (IndexOutOfBoundsException e){
-                        System.out.println("Index out of bound!" + e);
-                        return lowScore;
-                    }
-
-                    //score = miniMax(newPbs,false, 2, maxScore, beta, false, 50);
-                }
-                else if(score > 20){ // which is really high... enough
+                if(score > 40000){ // which is really high... enough
                     System.out.println("This is a high score move!");
-                    return lowScore;
+                    return bestScore;
                 }
-                */
-                if(score > 25){ // which is really high... enough
-                    System.out.println("This is a high score move!");
-                    return lowScore;
-                }
+                /*
                 if(score == 0 || score == 1){
                     // this means that we are at the beginning, no need to explore A LOT!
                     return score;
                     //break;
                 }
+                */
+
                 // now it reaches the ROOT [2] -> return 2
-                if(score < lowScore ) lowScore = score;
-                // FIRST ROUND:
-                // 3 < inf yes -> lowScore(beta) is now 3
-                // 12 is not satisfied -> lowScore not updated
-                // 8 is not satisfied -> lowScore not updated
-                // lowScore keeps to be 3
-
-                // SECOND ROUND:
-                // 2 is indeed lower than 3, so lowScore(beta) is 2 now.
-                // we notice that alpha < beta now, which is not good -> prune it, stop searching this node
-                // pruned, return alpha (3)
+                if(score < bestScore ) bestScore = score;
 
 
-                // THIRD ROUND:
-                // 1. 14 is returned, lowScore is updated to be 14
-                // 2. 5 ....
-                // 3. 2 is returned, ---lowScore is updated to be 2 --> again, pruned ...
-                // pruned, return alpha (3)
-
-                if(alpha >= lowScore){ // in this case 3 > 2
+                if(alpha >= bestScore){ // in this case 3 > 2
                     //break;
-                    //System.out.println("pruned!");
+                    System.out.println("pruned!");
                     return alpha;
 
                 }
             }
-            return lowScore; // 3 is returned by the FIRST MinNode
+            System.out.println("low score at Min Node is returned Now: "+ bestScore);
+            return bestScore; // 3 is returned by the FIRST MinNode
 
 
         }
@@ -325,56 +297,96 @@ public class StudentPlayer extends PentagoPlayer {
         // For example, maybe you'll need to load some pre-processed best opening
         // strategies...
         //MyTools.getSomething();
-        boardState.firstPlayer();
+
+        try {
 
 
-        int bestScore = Integer.MIN_VALUE;
-        Move bestMove = boardState.getRandomMove();
+            int bestScore = Integer.MIN_VALUE;
+            Move bestMove = boardState.getRandomMove();
+            int firstPlayer = boardState.firstPlayer();
+            int ourPlayer = bestMove.getPlayerID();
 
-        ArrayList<PentagoMove> childrenMoves = boardState.getAllLegalMoves();
-       // System.out.println("there are " + childrenMoves.size() + "possible next moves for this state");
-        // randomly
+            System.out.println("The first player id is: " + firstPlayer);
+            System.out.println("Our player id is: " + ourPlayer);
 
-        ArrayList<PentagoMove> movesToConsider = new ArrayList<>();
+            boolean weAreBlack = false;
 
-        Collections.shuffle(childrenMoves);
-        for(int i = 0;i<20;i++){
-            PentagoMove randMove = childrenMoves.get(i);
-            movesToConsider.add(randMove);
-        }
+            if (firstPlayer == ourPlayer) {
+                System.out.println("We play first! we are white!");
 
-
-        int count = 0;
-        for (PentagoMove move: movesToConsider) {
-            // clone it
-            System.out.println("Now process the: "+count);
-            PentagoBoardState newPbs = (PentagoBoardState) boardState.clone();
-            newPbs.processMove(move);// when we take this move, what would happen? we will calculate this miniMax score!
-
-            int alpha = Integer.MIN_VALUE;
-            int beta = Integer.MAX_VALUE;
-            int depthAllocated = 3; // 3 is fine for play time
-            int numMovesConsider = 20;
-            //System.out.println("Now compute the minimax Score....");
-            int score = miniMax(newPbs, true, depthAllocated, alpha, beta, false,20 );
-
-            //System.out.println("The score is: " + score);
-            if(score > bestScore){
-                bestScore = score;
-                bestMove = move;
+            } else {
+                weAreBlack = true;
+                System.out.println("We play the second, we are black! Change the utility func accordingly!");
             }
-            count++;
+
+            System.out.println("start searching killer move first!!");
+            PentagoMove killerMove = MyTools.searchWinningMove(boardState, weAreBlack);
+            if (killerMove == null) {
+                System.out.println("Running minimax to find a move");
+
+            } else {
+                System.out.println("There is a killer move or Our opponent is winning! We need to choose a move to break its win!!");
+                return killerMove;
+            }
+
+
+            ArrayList<PentagoMove> childrenMoves = boardState.getAllLegalMoves();
+            // System.out.println("there are " + childrenMoves.size() + "possible next moves for this state");
+            // randomly
+
+            ArrayList<PentagoMove> movesToConsider = new ArrayList<>();
+
+            Collections.shuffle(childrenMoves);
+            for (int i = 0; i < 30; i++) {
+                PentagoMove randMove = childrenMoves.get(i);
+                movesToConsider.add(randMove);
+            }
+
+
+            int count = 0;
+            for (PentagoMove move : movesToConsider) {
+                // clone it
+                //System.out.println("Now process move "+count);
+                PentagoBoardState newPbs = (PentagoBoardState) boardState.clone();
+                newPbs.processMove(move);// when we take this move, what would happen? we will calculate this miniMax score!
+
+                int alpha = Integer.MIN_VALUE;
+                int beta = Integer.MAX_VALUE;
+                int depthAllocated = 3; // 3 is fine for play time
+                int numMovesConsider = 20;
+                //System.out.println("Now compute the minimax Score....");
+
+                long startTime = System.nanoTime();
+                int score = miniMax(newPbs, true, depthAllocated, alpha, beta, false, 20, startTime, weAreBlack);
+                System.out.println("The chosen move in iteration: " + count + " has score: " + score);
+                if (score == -1000) {
+                    System.out.println("use random move!!");
+                    return boardState.getRandomMove(); // reach time limit!
+                }
+                //System.out.println("The score is: " + score);
+                if (score > bestScore) {
+                    System.out.println("Bestmove is updated!");
+                    bestScore = score;
+                    bestMove = move;
+                }
+                System.out.println("Best score so far: " + bestScore);
+                count++;
+
+            }
+
+
+            // Is random the best you can do?
+            // Move myMove = boardState.getRandomMove();
+
+
+            // Return your move to be processed by the server.
+            return bestMove;
 
         }
+        catch (Exception e){
+            System.out.println("Exception caught! Return a random move");
+            return boardState.getRandomMove();
 
-
-        // Is random the best you can do?
-       // Move myMove = boardState.getRandomMove();
-
-
-
-
-        // Return your move to be processed by the server.
-        return bestMove;
+        }
     }
 }
