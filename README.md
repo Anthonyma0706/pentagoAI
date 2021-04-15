@@ -1,6 +1,7 @@
 # pentagoAI
-##An AI agent to play Pentago-twist game
+## An AI agent to play Pentago-twist game
 (Note that other key classes needed for the full functionality of this game project including GUI are kept private.)
+
 In this project, we work on developing an artifcial intelligence agent to play Pentago-Twist,
 a Moku family game. Pentago-Twist has significantly more complexity than Tic-tac-toe and
 ve-in-a-row, in which the playboard is divided into four quadrants that can be rotated 90
